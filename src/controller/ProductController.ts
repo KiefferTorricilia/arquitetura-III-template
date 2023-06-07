@@ -1,23 +1,34 @@
 import { Request, Response } from "express"
 import { ProductBusiness } from "../business/ProductBusiness"
 import { BaseError } from "../errors/BaseError"
+import { editProductSchema } from "../dtos/editProduct.dto"
+import { ZodError } from "zod"
+import { createProductSchema } from "../dtos/createProduct.dto"
 
 export class ProductController {
+  constructor(
+    private productBusiness: ProductBusiness
+  ){}
+
   public createProduct = async (req: Request, res: Response) => {
     try {
 
-      const input = {
+      const input = createProductSchema.parse({
         id: req.body.id,
         name: req.body.name,
         price: req.body.price
-      }
+      })
 
-      const productBusiness = new ProductBusiness()
-      const output = await productBusiness.createProduct(input)
+     
+      const output = await this.productBusiness.createProduct(input)
 
       res.status(201).send(output)
     } catch (error) {
       console.log(error)
+
+      if(error instanceof ZodError){
+        res.status(400).send(error.issues)
+      }
 
       if (error instanceof BaseError) {
         res.status(error.statusCode).send(error.message)
@@ -33,8 +44,8 @@ export class ProductController {
         q: req.query.q
       }
 
-      const productBusiness = new ProductBusiness()
-      const output = await productBusiness.getProducts(input)
+      
+      const output = await this.productBusiness.getProducts(input)
 
       res.status(200).send(output)
     } catch (error) {
@@ -51,19 +62,23 @@ export class ProductController {
   public editProduct = async (req: Request, res: Response) => {
     try {
 
-      const input = {
+      const input = editProductSchema.parse({
         idToEdit: req.params.id,
         id: req.body.id,
         name: req.body.name,
         price: req.body.price
-      }
+      })
 
-      const productBusiness = new ProductBusiness()
-      const output = await productBusiness.editProduct(input)
+      
+      const output = await this.productBusiness.editProduct(input)
 
       res.status(200).send(output)
     } catch (error) {
       console.log(error)
+
+      if(error instanceof ZodError) {
+        res.status(400).send(error.issues)
+      }
 
       if (error instanceof BaseError) {
         res.status(error.statusCode).send(error.message)
@@ -80,8 +95,8 @@ export class ProductController {
         idToDelete: req.params.id
       }
 
-      const productBusiness = new ProductBusiness()
-      const output = await productBusiness.deleteProduct(input)
+      
+      const output = await this.productBusiness.deleteProduct(input)
 
       res.status(200).send(output)
     } catch (error) {
